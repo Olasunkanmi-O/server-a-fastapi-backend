@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+    <style>
+        body { font-family: Arial; margin: 40px; }
+        h1 { color: #2c3e50; }
+        .section { margin-bottom: 30px; }
+        .label { font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>FiscalGuide Admin Dashboard</h1>
+
+    <div class="section">
+        <h2>LLM Provider</h2>
+        <p><span class="label">Provider:</span> {{ config.provider }}</p>
+        <p><span class="label">Model:</span> {{ config.model }}</p>
+    </div>
+
+    <div class="section">
+        <h2>Database</h2>
+        <p><span class="label">Status:</span> {{ config.database.status }}</p>
+        <p><span class="label">Uncategorized Transactions:</span> {{ config.database.uncategorized_transactions }}</p>
+    </div>
+
+    <div class="section">
+        <h2>System</h2>
+        <p><span class="label">Uptime:</span> {{ config.system.uptime_seconds }} seconds</p>
+        <p><span class="label">Memory Usage:</span> {{ config.system.memory_usage_mb }} MB</p>
+        <p><span class="label">CPU Usage:</span> {{ config.system.cpu_usage_percent }}%</p>
+    </div>
+
+    <div class="section">
+        <h2>Tasks</h2>
+        <p><span class="label">Categorization:</span> {{ config.tasks.categorization }}</p>
+    </div>
+</body>
+</html>
