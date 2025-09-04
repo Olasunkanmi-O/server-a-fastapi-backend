@@ -10,3 +10,8 @@ faiss-cpu  # if you're using FAISS locally
 transformers  # if you're prepping for LLM integration
 safetensors
 scikit-learn  # optional, for embedding or clustering
+pydantic-settings
+openai == 1.105.0
+google-generativeai
+psutil
+sentence-transformers
