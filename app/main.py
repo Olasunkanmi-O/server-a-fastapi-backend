@@ -1,6 +1,11 @@
 # app/main.py
 
+# app/main.py
+
 import asyncio
+from fastapi import FastAPI, Request
+from fastapi.templating import Jinja2Templates
+from app.routers import categorize, scenario, review, health, config
 from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
 from app.routers import categorize, scenario, review, health, config
@@ -9,8 +14,12 @@ from app.tasks.categorize_task import categorize_new_transactions
 from app.routers.config import show_config
 from sentence_transformers import SentenceTransformer
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
+from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 import faiss
 import numpy as np
+import json
+import httpx
+from app.config import settings
 import json
 import httpx
 from app.config import settings
@@ -21,12 +30,18 @@ templates = Jinja2Templates(directory="app/templates")
 app = FastAPI(title="FiscalGuide LLM API", version="1.0.0")
 
 # Routers
+# Routers
 app.include_router(categorize.router, prefix="/transactions", tags=["Categorize"])
 app.include_router(scenario.router, prefix="/transactions", tags=["Scenario"])
 app.include_router(review.router, prefix="/transactions", tags=["Review"])
 app.include_router(health.router, prefix="/health", tags=["Health"])
 app.include_router(config.router, prefix="/system", tags=["System"])
 
+# Globals
+embedder = None
+index = None
+texts = None
+generator = None
 # Globals
 embedder = None
 index = None
@@ -41,6 +56,7 @@ async def startup_event():
         with open("chunks_with_meta.json", "r") as f:
             data = json.load(f)
             return [item["text"] for item in data]
+        
         
 
     embedder = SentenceTransformer("all-MiniLM-L6-v2")
@@ -70,6 +86,8 @@ async def root():
 
 @app.get("/admin")
 async def admin_dashboard(request: Request):
+    config_data = await show_config()
+    return templates.TemplateResponse("dashboard.html", {"request": request, "config": config_data})
     config_data = await show_config()
     return templates.TemplateResponse("dashboard.html", {"request": request, "config": config_data})
 

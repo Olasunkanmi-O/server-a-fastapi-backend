@@ -1,8 +1,15 @@
 import google.generativeai as genai
 from app.providers.base import LLMProviderInterface
 from app.config import settings
+from app.config import settings
 
 class GoogleProvider(LLMProviderInterface):
+    """Wrapper for Google Gemini API."""
+
+    def __init__(self):
+        genai.configure(api_key=settings.GEMINI_API_KEY)
+        self.model_name = settings.GOOGLE_MODEL or "gemini-1.5-pro-latest"
+        self.client = genai.GenerativeModel(self.model_name)
     """Wrapper for Google Gemini API."""
 
     def __init__(self):
@@ -13,6 +20,7 @@ class GoogleProvider(LLMProviderInterface):
     def categorize_transaction(self, description: str) -> str:
         prompt = f"Categorize this transaction: '{description}'. Return only the category label."
         try:
+            response = self.client.generate_content(prompt)
             response = self.client.generate_content(prompt)
             return response.text.strip()
         except Exception as e:
@@ -30,6 +38,7 @@ class GoogleProvider(LLMProviderInterface):
             f"Respond in plain English."
         )
         try:
+            response = self.client.generate_content(prompt)
             response = self.client.generate_content(prompt)
             return response.text.strip()
         except Exception as e:
