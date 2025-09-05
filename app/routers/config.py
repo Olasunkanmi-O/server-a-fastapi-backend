@@ -31,7 +31,10 @@ async def show_config():
     return {
         "provider": settings.LLM_PROVIDER,
         "model": "gpt-4o-mini" if settings.LLM_PROVIDER == "openai" else "custom",
-        "api_key_loaded": bool(settings.API_KEY),
+        "api_key_loaded": (
+            bool(settings.OPENAI_API_KEY) if settings.LLM_PROVIDER == "openai"
+            else bool(settings.GEMINI_API_KEY)
+        ),
         "database": {
             "url": settings.DATABASE_URL,
             "status": db_status,

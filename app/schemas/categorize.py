@@ -1,6 +1,5 @@
-# app/schemas.py
-from typing import List, Optional
 from pydantic import BaseModel
+from typing import List, Optional
 from datetime import date
 
 class TransactionUpdate(BaseModel):
@@ -16,17 +15,3 @@ class CategorizeResponse(BaseModel):
     status: str
     transactions: List[TransactionUpdate] = []
     low_confidence_count: int
-
-
-class ScenarioRequest(BaseModel):
-    user_id: int
-    scenario_text: str  # user's question or hypothetical
-
-class ScenarioResponse(BaseModel):
-    answer: str
-    confidence: float
-
-class ReviewResponse(BaseModel):
-    status: str
-    transactions: List[TransactionUpdate]
-

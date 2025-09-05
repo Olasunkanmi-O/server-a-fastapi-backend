@@ -1,25 +1,19 @@
-import os
 import google.generativeai as genai
 from app.providers.base import LLMProviderInterface
-import google.generativeai as genai
-
-
-
-
-
-
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-
+from app.config import settings
 
 class GoogleProvider(LLMProviderInterface):
-    def __init__(self, api_key: str):
-        genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel("models/gemini-1.5-pro")
+    """Wrapper for Google Gemini API."""
+
+    def __init__(self):
+        genai.configure(api_key=settings.GEMINI_API_KEY)
+        self.model_name = settings.GOOGLE_MODEL or "gemini-1.5-pro-latest"
+        self.client = genai.GenerativeModel(self.model_name)
 
     def categorize_transaction(self, description: str) -> str:
         prompt = f"Categorize this transaction: '{description}'. Return only the category label."
         try:
-            response = self.model.generate_content(prompt)
+            response = self.client.generate_content(prompt)
             return response.text.strip()
         except Exception as e:
             print(f"Gemini categorization error: {e}")
@@ -36,16 +30,25 @@ class GoogleProvider(LLMProviderInterface):
             f"Respond in plain English."
         )
         try:
-            response = self.model.generate_content(prompt)
+            response = self.client.generate_content(prompt)
             return response.text.strip()
         except Exception as e:
             print(f"Gemini summary error: {e}")
             return "Sorry, I couldn't generate a summary at this time."
 
     def generate_response(self, prompt: str) -> dict:
-        # Gemini expects structured input, so we’ll treat the prompt as a user query
-        return {
-            "category": self.summarize_business_health(prompt, []),
-            "confidence": 1.0
-        }
-
+        print(f"Gemini generating response for: {prompt}")
+        try:
+            summary = self.summarize_business_health(prompt, [])
+            print(f"Gemini summary: {summary}")
+            return {
+                "category": summary,
+                "confidence": 1.0
+            }
+        except Exception as e:
+            print(f"Gemini generate_response error: {e}")
+            return {
+                "category": "Error",
+                "confidence": 0.0,
+                "error": str(e)
+            }
