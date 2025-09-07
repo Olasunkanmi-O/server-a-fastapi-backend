@@ -3,6 +3,10 @@
 from fastapi import APIRouter, HTTPException
 from app.schemas import ReviewRequest, ReviewResponse
 from app.services.review_service import process_review_submission
+import logging
+logger = logging.getLogger(__name__)
+
+
 
 router = APIRouter(
     prefix="/transactions",
@@ -22,6 +26,13 @@ async def submit_review(payload: ReviewRequest):
     """
     try:
         result = await process_review_submission(payload)
+        logger.info(f"Review submitted by user {payload.user_id} for transaction {payload.transaction_id}")
         return result
     except Exception as e:
+        logger.error(f"Review submission failed for user {payload.user_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Review submission failed: {str(e)}")
+
+
+@router.get("/review/health")
+async def review_health():
+    return {"status": "review router active"}

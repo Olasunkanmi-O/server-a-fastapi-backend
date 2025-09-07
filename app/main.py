@@ -19,7 +19,7 @@ from app.routers.config import show_config
 
 # Routers
 from app.routers import categorize, scenario, review, health, config
-from app.routers.scenario import router as scenario_router
+
 
 # Templates
 templates = Jinja2Templates(directory="app/admin_monitoring/templates")
@@ -40,7 +40,11 @@ app.include_router(review.router, prefix="/transactions", tags=["Review Logs"])
 app.include_router(health.router, prefix="/health", tags=["Health Checks"])
 app.include_router(config.router, prefix="/system", tags=["System Config"])
 
-# -------------------- STARTUP & SHUTDOWN --------------------
+
+# --------------------LLM CALL -----------------------------------
+base_url = settings.LLM_ENDPOINT.rstrip("/")
+
+# -------------------- STARTUP & SHUTDOWN -------------------------
 
 @app.on_event("startup")
 async def startup_event():
@@ -51,16 +55,20 @@ async def startup_event():
             data = json.load(f)
             return [item["text"] for item in data]
 
-    print(f" LLM endpoint configured as: {settings.LLM_ENDPOINT}")
+    print(f" Starting Server A...")
+
     server_d_alive = await ping_server_d()
-    print(f" Server D reachable: {server_d_alive}")
+    if server_d_alive:
+        print(" Server D is up and responding to health checks.")
+    else:
+        print(" Server D is unreachable. Check network, endpoint, or service status.")
 
     embedder = SentenceTransformer("all-MiniLM-L6-v2")
     index = faiss.read_index("vat_index.faiss")
     texts = load_text_chunks()
 
     asyncio.create_task(periodic_categorization())
-    #asyncio.create_task(test_llm_call())
+    # asyncio.create_task(test_llm_call())
 
 @app.on_event("shutdown")
 async def shutdown_event():
@@ -79,6 +87,7 @@ async def test_llm_call():
 
 # -------------------- ROUTES --------------------
 
+
 @app.get("/")
 async def root():
     return {"message": "FiscalGuide LLM API is running!"}
@@ -90,21 +99,19 @@ async def admin_dashboard(request: Request):
 
 @app.post("/query")
 async def query_model(request: Request):
-    import time  # Needed for sleep
     data = await request.json()
     prompt = data.get("prompt", "") or data.get("userQuery", "")
     raw_id = data.get("user_id", 123)
+
     if not str(raw_id).isdigit():
         return {"error": "user_id must be numeric."}
     user_id = int(raw_id)
-
 
     if not prompt:
         return {"error": "No prompt provided."}
 
     route = "/scenario" if prompt.lower().startswith("what if") else "/llm/infer"
     print(f"Routing prompt to: {route}")
-    
 
     try:
         if route == "/scenario":
@@ -114,25 +121,13 @@ async def query_model(request: Request):
             }
             print(f"Sending to /scenario: {scenario_payload}")
 
-            for attempt in range(3):
-                try:
-                    scenario_response = requests.post(
-                        f"http://44.220.141.173:8000{route}",
-                        json=scenario_payload,
-                        timeout=200
-                    )
-                    if scenario_response.status_code == 200:
-                        return scenario_response.json()
-                    else:
-                        print(f"Attempt {attempt + 1} failed with status {scenario_response.status_code}")
-                        break
-                except requests.exceptions.ReadTimeout:
-                    print(f"Attempt {attempt + 1} timed out. Retrying...")
-                    time.sleep(2)
+            response = post_with_retries(f"{base_url}{route}", scenario_payload)
+            if response:
+                return response
 
-            # Fallback to direct LLM inference
+            print("Fallback to /llm/infer triggered due to scenario failure.")
             fallback_response = requests.post(
-                "http://44.220.141.173:8000/llm/infer",
+                f"{base_url}/llm/infer",
                 json={"prompt": prompt},
                 timeout=20
             )
@@ -140,7 +135,7 @@ async def query_model(request: Request):
 
         # Direct LLM inference for non-scenario prompts
         llm_response = requests.post(
-            f"http://44.220.141.173:8000{route}",
+            f"{base_url}{route}",
             json={"prompt": prompt},
             timeout=20
         )
@@ -151,7 +146,22 @@ async def query_model(request: Request):
             "response": "Unable to process request.",
             "error": str(e)
         }
-   
+
+# -------------------- HELPER FUNCTIONS --------------------
+
+def post_with_retries(url, payload, retries=3, timeout=30):
+    for attempt in range(retries):
+        try:
+            response = requests.post(url, json=payload, timeout=timeout)
+            if response.status_code == 200:
+                return response.json()
+            print(f"Attempt {attempt + 1} failed with status {response.status_code}")
+            break
+        except requests.exceptions.ReadTimeout:
+            print(f"Attempt {attempt + 1} timed out. Retrying...")
+            time.sleep(2)
+    return None
+
 
 # -------------------- LLM ORCHESTRATION --------------------
 
@@ -173,7 +183,7 @@ async def call_llm(prompt: str) -> dict:
 async def ping_server_d() -> bool:
     async with httpx.AsyncClient() as client:
         try:
-            ping_url = settings.LLM_ENDPOINT.replace("/infer", "/ping")
+            ping_url = settings.LLM_ENDPOINT.replace("/infer", "/health")
             res = await client.get(ping_url)
             return res.status_code == 200
         except Exception as e:

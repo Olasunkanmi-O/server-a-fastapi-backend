@@ -25,3 +25,7 @@ async def receive_feedback(payload: FeedbackRequest):
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Feedback submission failed: {str(e)}")
+
+@router.get("/health")
+async def health_check():
+    return {"status": "feedback router active"}

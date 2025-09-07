@@ -1,6 +1,7 @@
 # app/routers/health.py
 
 from fastapi import APIRouter
+from datetime import datetime
 
 router = APIRouter(
     prefix="/health",
@@ -15,3 +16,12 @@ def health_check():
     Useful for startup diagnostics, orchestration validation, and uptime monitoring.
     """
     return {"status": "ok"}
+
+
+
+@router.get("/ping")
+def health_check():
+    return {
+        "status": "ok",
+        "timestamp": datetime.utcnow().isoformat() + "Z"
+    }
