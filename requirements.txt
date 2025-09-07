@@ -1,0 +1,17 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+asyncpg  # if using async PostgreSQL
+psycopg2-binary  # if using sync PostgreSQL
+python-dotenv
+pydantic
+httpx  # for making async HTTP calls
+faiss-cpu  # if you're using FAISS locally
+transformers  # if you're prepping for LLM integration
+safetensors
+scikit-learn  # optional, for embedding or clustering
+pydantic-settings
+openai == 1.105.0
+google-generativeai
+psutil
+sentence-transformers

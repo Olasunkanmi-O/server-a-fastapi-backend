@@ -1,0 +1,33 @@
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+llm-env/
+.env
+*.env
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Logs and temp files
+*.log
+*.sqlite3
+*.db
+
+# IDE/editor configs
+.vscode/
+.idea/
+*.swp
+
+# Model or index files (if applicable)
+*.faiss
+*.bin
+*.pt
+*.ckpt
