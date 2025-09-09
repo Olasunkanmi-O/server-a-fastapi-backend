@@ -5,7 +5,7 @@ from typing import List, Optional
 
 class CategorizedTransaction(BaseModel):
     id: int
-    category: str
+    tax_category: str
     confidence: float
     needs_review: bool
     prompt: str
@@ -20,7 +20,7 @@ class CategorizeResponse(BaseModel):
 
 class TransactionUpdate(BaseModel):
     id: int
-    category: str
+    tax_category: str
     confidence: float
     needs_review: bool
     prompt: str

@@ -5,7 +5,7 @@ import asyncio
 async def categorize_new_transactions():
     pool = await get_pool()
     async with pool.acquire() as conn:
-        transactions = await conn.fetch("SELECT id, description, amount FROM transactions WHERE category IS NULL")
+        transactions = await conn.fetch("SELECT id, description, amount FROM transactions WHERE tax_category IS NULL")
 
     updates = await asyncio.gather(*(categorize_transaction(tx) for tx in transactions))
     updates = [u for u in updates if u]
@@ -15,6 +15,6 @@ async def categorize_new_transactions():
             for u in updates:
                 await conn.execute("""
                     UPDATE transactions
-                    SET category=$1, confidence=$2, needs_review=$3
+                    SET tax_category=$1, confidence=$2, needs_review=$3
                     WHERE id=$4
-                """, u["category"], u["confidence"], u["needs_review"], u["id"])
+                """, u["tax_category"], u["confidence"], u["needs_review"], u["id"])

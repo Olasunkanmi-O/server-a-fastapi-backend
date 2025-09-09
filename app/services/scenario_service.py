@@ -7,8 +7,10 @@ import json
 
 # Define known categories for validation
 KNOWN_CATEGORIES = {
-    "food", "travel", "office supplies", "marketing", "utilities",
-    "salary", "equipment", "software", "uncategorized", "other"
+    "sales", "income", "rent & lease", "utilities", "software",
+    "marketing & advertising", "bank charges", "insurance",
+    "travel & mileage", "professional development", "hmrc payments",
+    "office supplies", "general expense", "uncategorized"
 }
 
 # Inline LLM call stub (replace with actual orchestration logic)
@@ -41,7 +43,7 @@ async def build_scenario_response(payload: ScenarioRequest) -> ScenarioResponse:
 
         # Fetch recent transactions
         recent_transactions = await conn.fetch("""
-            SELECT date, description, amount, COALESCE(category,'uncategorized') AS category
+            SELECT date, description, amount, COALESCE(tax_category,'uncategorized') AS category
             FROM transactions
             WHERE user_id = $1 AND date >= $2
             ORDER BY date DESC
@@ -50,23 +52,23 @@ async def build_scenario_response(payload: ScenarioRequest) -> ScenarioResponse:
 
         # Fetch aggregated transactions
         aggregated_transactions = await conn.fetch("""
-            SELECT to_char(date, 'YYYY-MM') AS month, category,
+            SELECT to_char(date, 'YYYY-MM') AS month, tax_category,
                    SUM(amount) AS total_amount
             FROM transactions
             WHERE user_id = $1 AND date >= $2 AND date < $3
-            GROUP BY month, category
+            GROUP BY month, tax_category
             ORDER BY month DESC
             LIMIT 12
         """, user_id, aggregation_cutoff, recent_cutoff)
 
     # Format summaries
     recent_summary = "\n".join([
-        f"- {tx['date'].strftime('%Y-%m-%d')}: {tx['description']} (£{tx['amount']}) [{tx['category']}]"
+        f"- {tx['date'].strftime('%Y-%m-%d')}: {tx['description']} (£{tx['amount']}) [{tx['tax_category']}]"
         for tx in recent_transactions
     ]) if recent_transactions else "No recent transactions."
 
     agg_summary = "\n".join([
-        f"- {row['month']} | {row['category']}: £{row['total_amount']}"
+        f"- {row['month']} | {row['tax_category']}: £{row['total_amount']}"
         for row in aggregated_transactions
     ]) if aggregated_transactions else "No older transactions."
 
@@ -79,7 +81,7 @@ async def build_scenario_response(payload: ScenarioRequest) -> ScenarioResponse:
     for change in hypothetical_changes:
         desc = change.get("description", "Unnamed change")
         amt = change.get("amount")
-        cat = change.get("category", "uncategorized").lower()
+        cat = change.get("tax_category", "uncategorized").lower()
 
         if not isinstance(amt, (int, float)):
             raise ValueError(f"Invalid amount in hypothetical change: {desc}")

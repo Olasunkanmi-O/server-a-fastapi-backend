@@ -6,7 +6,7 @@ from typing import List, Optional
 class HypotheticalChange(BaseModel):
     description: str
     amount: float
-    category: str
+    tax_category: str
 
 class ScenarioRequest(BaseModel):
     user_id: str

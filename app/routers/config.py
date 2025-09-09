@@ -18,7 +18,7 @@ async def show_config():
         async with pool.acquire() as conn:
             await conn.execute("SELECT 1")
             db_status = "connected"
-            uncategorized_count = await conn.fetchval("SELECT COUNT(*) FROM transactions WHERE category IS NULL")
+            uncategorized_count = await conn.fetchval("SELECT COUNT(*) FROM transactions WHERE tax_category IS NULL")
     except asyncpg.PostgresError:
         db_status = "error"
 

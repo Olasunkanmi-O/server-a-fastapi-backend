@@ -1,8 +1,10 @@
 from pydantic_settings import BaseSettings
 
+
+
 class Settings(BaseSettings):
     # Core LLM endpoint
-    LLM_ENDPOINT: str = "http://localhost:8000/infer"
+    LLM_ENDPOINT: str = "http://3.9.188.62:8000/infer"
 
     # Database
     DATABASE_URL: str

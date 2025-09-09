@@ -8,7 +8,9 @@ class TransactionUpdate(BaseModel):
     description: str
     amount: float
     date: Optional[date] = None
-    category: str = "Uncategorized"
+    tax_category: str = "Uncategorized"
+    deductible: bool = True
+    vat_applicable: bool = True
     needs_review: bool = True
     confidence: float = 0.0
 
