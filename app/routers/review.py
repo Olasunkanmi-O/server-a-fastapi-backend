@@ -9,7 +9,6 @@ logger = logging.getLogger(__name__)
 
 
 router = APIRouter(
-    prefix="/transactions",
     tags=["Review Logs"]
 )
 

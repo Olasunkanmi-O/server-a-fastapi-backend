@@ -5,7 +5,6 @@ from app.schemas import CategorizeResponse
 from app.services.categorize_service import run_categorization_pipeline
 
 router = APIRouter(
-    prefix="/transactions",
     tags=["Categorization"]
 )
 

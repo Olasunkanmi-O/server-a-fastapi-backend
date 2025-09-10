@@ -5,9 +5,14 @@ import asyncio
 async def categorize_new_transactions():
     pool = await get_pool()
     async with pool.acquire() as conn:
-        transactions = await conn.fetch("SELECT id, description, amount FROM transactions WHERE tax_category IS NULL")
+        transactions = await conn.fetch("""
+            SELECT id, user_id, description, amount
+            FROM transactions
+            WHERE tax_category IS NULL OR tax_category = 'Uncategorized'
+        """)
+        #print("Transactions received for categorization:", transactions)
 
-    updates = await asyncio.gather(*(categorize_transaction(tx) for tx in transactions))
+    updates = await asyncio.gather(*(categorize_transaction(tx) for tx in transactions))    
     updates = [u for u in updates if u]
 
     async with pool.acquire() as conn:

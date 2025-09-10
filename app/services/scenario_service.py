@@ -43,7 +43,7 @@ async def build_scenario_response(payload: ScenarioRequest) -> ScenarioResponse:
 
         # Fetch recent transactions
         recent_transactions = await conn.fetch("""
-            SELECT date, description, amount, COALESCE(tax_category,'uncategorized') AS category
+            SELECT date, description, amount, COALESCE(tax_category,'uncategorized') AS tax_category
             FROM transactions
             WHERE user_id = $1 AND date >= $2
             ORDER BY date DESC

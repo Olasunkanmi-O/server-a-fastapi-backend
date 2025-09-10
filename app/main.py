@@ -168,7 +168,7 @@ def post_with_retries(url, payload, retries=3, timeout=30):
 async def call_llm(prompt: str) -> dict:
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.post(settings.LLM_ENDPOINT, json={"prompt": prompt})
+            response = await client.post(f"{settings.LLM_ENDPOINT}/llm/infer", json={"prompt": prompt})
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
@@ -183,9 +183,13 @@ async def call_llm(prompt: str) -> dict:
 async def ping_server_d() -> bool:
     async with httpx.AsyncClient() as client:
         try:
-            ping_url = settings.LLM_ENDPOINT.replace("/infer", "/health")
+            ping_url = f"{settings.LLM_ENDPOINT}/llm/health"
             res = await client.get(ping_url)
             return res.status_code == 200
         except Exception as e:
             print(f" Server D ping failed: {str(e)}")
             return False
+
+
+for route in app.routes:
+    print(route.path)

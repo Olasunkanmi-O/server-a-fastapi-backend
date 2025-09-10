@@ -4,7 +4,6 @@ from fastapi import APIRouter
 from datetime import datetime
 
 router = APIRouter(
-    prefix="/health",
     tags=["Health Checks"]
 )
 

@@ -1,9 +1,8 @@
--- users 
+-- USERS
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
-  username VARCHAR(255) UNIQUE NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
   password VARCHAR(255) NOT NULL,
-  email VARCHAR(255) UNIQUE,
   business_name VARCHAR(255) NOT NULL,
   business_structure VARCHAR(50) NOT NULL, -- e.g. sole_trader, limited_company
   vat_enabled BOOLEAN NOT NULL,
@@ -13,19 +12,19 @@ CREATE TABLE users (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- user_plaid_accounts
+-- USER PLAID ACCOUNTS
 CREATE TABLE user_plaid_accounts (
   id SERIAL PRIMARY KEY,
-  user_id INT REFERENCES users(id),
+  user_id INT REFERENCES users(id) ON DELETE CASCADE,
   item_id VARCHAR(255) UNIQUE NOT NULL,
   access_token VARCHAR(255) UNIQUE NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- transactions
+-- TRANSACTIONS
 CREATE TABLE transactions (
   id SERIAL PRIMARY KEY,
-  user_id INT REFERENCES users(id),
+  user_id INT REFERENCES users(id) ON DELETE CASCADE,
   plaid_transaction_id VARCHAR(255) UNIQUE,
   date DATE NOT NULL,
   description TEXT NOT NULL,
@@ -41,7 +40,7 @@ CREATE TABLE transactions (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- category mapping
+-- CATEGORY MAPPINGS
 CREATE TABLE category_mappings (
   id SERIAL PRIMARY KEY,
   plaid_category VARCHAR(255) NOT NULL,
@@ -51,20 +50,21 @@ CREATE TABLE category_mappings (
   notes TEXT
 );
 
--- transaction override
+-- TRANSACTION OVERRIDES
 CREATE TABLE transaction_overrides (
   id SERIAL PRIMARY KEY,
-  transaction_id INT REFERENCES transactions(id),
-  user_id INT REFERENCES users(id),
+  transaction_id INT REFERENCES transactions(id) ON DELETE CASCADE,
+  user_id INT REFERENCES users(id) ON DELETE CASCADE,
   new_tax_category VARCHAR(255),
+  override_type VARCHAR(50), -- e.g. manual, llm_suggested
   reason TEXT,
   timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- tax summaries
+-- TAX SUMMARIES
 CREATE TABLE tax_summaries (
   id SERIAL PRIMARY KEY,
-  user_id INT REFERENCES users(id),
+  user_id INT REFERENCES users(id) ON DELETE CASCADE,
   period_start DATE NOT NULL,
   period_end DATE NOT NULL,
   total_income NUMERIC(12,2),
@@ -75,10 +75,10 @@ CREATE TABLE tax_summaries (
   generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- conversation logs
+-- CONVERSATION LOGS
 CREATE TABLE conversation_logs (
   id SERIAL PRIMARY KEY,
-  user_id INT REFERENCES users(id),
+  user_id INT REFERENCES users(id) ON DELETE CASCADE,
   timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   input_text TEXT NOT NULL,
   llm_response JSONB NOT NULL,
@@ -87,22 +87,35 @@ CREATE TABLE conversation_logs (
   session_id VARCHAR(255)
 );
 
--- scenario logs 
+-- SCENARIO LOGS
 CREATE TABLE scenario_logs (
   id SERIAL PRIMARY KEY,
-  user_id INT REFERENCES users(id),
+  user_id INT REFERENCES users(id) ON DELETE CASCADE,
   prompt TEXT NOT NULL,
   response JSONB NOT NULL,
+  context JSONB,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- feedback logs 
+-- FEEDBACK LOGS
 CREATE TABLE feedback_logs (
   id SERIAL PRIMARY KEY,
-  user_id INT REFERENCES users(id),
+  user_id INT REFERENCES users(id) ON DELETE CASCADE,
   feedback TEXT NOT NULL,
   task_type VARCHAR(100) DEFAULT 'general',
   source_model VARCHAR(100) DEFAULT 'user',
   session_id VARCHAR(255),
+  conversation_id INT REFERENCES conversation_logs(id) ON DELETE SET NULL,
   timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- SESSION MANAGEMENT (OPTIONAL)
+CREATE TABLE user_sessions (
+  id SERIAL PRIMARY KEY,
+  user_id INT REFERENCES users(id) ON DELETE CASCADE,
+  device_info TEXT,
+  ip_address TEXT,
+  refresh_token VARCHAR(255) UNIQUE,
+  expires_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
